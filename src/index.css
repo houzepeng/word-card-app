@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Zcool+KuaiLe&family=Fredoka+One&family=Noto+Sans+SC:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-bg: #fbf8f1;
+}
+
+body {
+  background-color: var(--app-bg);
+  overscroll-behavior-y: none;
+}
+
+.bg-texture {
+  background-color: #fbf8f1;
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* 自定义类：手绘边框 */
+.doodle-border {
+  border: 3px solid #2d3436;
+  border-radius: 20px;
+  box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.1);
+  background-color: #fffcf5;
+}
+
+/* 自定义类：手绘盒子 */
+.doodle-box {
+  border: 2px solid #2d3436;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0px 0px #2d3436;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: white;
+  touch-action: manipulation;
+}
+
+.doodle-box:active {
+  transform: scale(0.98);
+  box-shadow: 1px 1px 0px 0px #2d3436;
+}
+
+/* 测验模式激活态 */
+.quiz-active .doodle-box { 
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% { border-color: #2d3436; }
+  50% { border-color: #6366f1; }
+  100% { border-color: #2d3436; }
+}
+
+/* 填色模式 */
+.coloring-mode img { filter: grayscale(100%) contrast(120%) brightness(110%); }
+.coloring-mode .doodle-box { box-shadow: none; border: 2px solid black; }
+.coloring-mode .category-bg { opacity: 0 !important; }
+
+/* 虚线分割 */
+.dashed-divider {
+  background-image: linear-gradient(to right, #2d3436 50%, rgba(255,255,255,0) 0%);
+  background-position: bottom;
+  background-size: 12px 2px;
+  background-repeat: repeat-x;
+}
+
+.text-stroke { -webkit-text-stroke: 1.5px #2d3436; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
