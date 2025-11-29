@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Create env file
+        run: |
+          echo "VITE_GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" > .env.production
       - run: npm install --no-audit --no-fund
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { 
   Sparkles, RefreshCw, Palette, Printer, Volume2, BookOpen, X, 
   Wand2, Gamepad2, Download, Edit3, Layers, Home, Menu
@@ -292,8 +293,7 @@ export default function App() {
   const [quizTarget, setQuizTarget] = useState(null);
   const [quizScore, setQuizScore] = useState(0);
 
-  // 修复：移除 import.meta.env，直接使用空字符串（API Key 会由环境自动注入）
-  const apiKey = "AIzaSyDW5utRaU85AI_DlTTjbFSeg9YMqk6qPow"; 
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
   
   const colorPalette = [
     { bg: "bg-red-50", border: "border-red-200" },
@@ -303,20 +303,14 @@ export default function App() {
     { bg: "bg-blue-50", border: "border-blue-200" },
   ];
 
-  // 加载 html2canvas
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => { document.body.removeChild(script); }
-  }, []);
 
   // API Helper
   const safeFetch = async (url, options) => {
+    if (!apiKey) throw new Error("Missing API key");
     const response = await fetch(`${url}?key=${apiKey}`, options);
-    if (!response.ok) throw new Error(`API Error: ${response.status}`);
-    return response.json();
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || `API Error: ${response.status}`);
+    try { return JSON.parse(text); } catch { return { raw: text }; }
   };
 
   const generateContent = async () => {
@@ -334,7 +328,7 @@ export default function App() {
       const parsedData = JSON.parse(res.candidates[0].content.parts[0].text);
       parsedData.categories = parsedData.categories.map((cat, i) => ({ ...cat, ...colorPalette[i % colorPalette.length] }));
       setData(parsedData);
-    } catch (e) { alert("生成失败，请重试"); } finally { setLoading(false); }
+    } catch (e) { alert(e.message?.includes('leaked') ? 'API Key 已泄露或被禁用，请更换新的密钥' : (e.message === 'Missing API key' ? '缺少 API Key，请在环境变量中配置后再试' : '生成失败，请重试')); } finally { setLoading(false); }
   };
 
   const generateImage = async (prompt) => {
@@ -412,18 +406,14 @@ export default function App() {
   };
 
   const handleExport = () => {
-      // 动态使用 window.html2canvas
       const el = document.querySelector('.export-area');
-      if (el && window.html2canvas) {
-          window.html2canvas(el, { scale: 2, useCORS: true }).then(canvas => {
-              const link = document.createElement('a');
-              link.download = `WordCard-${data.topicEn}.png`;
-              link.href = canvas.toDataURL();
-              link.click();
-          });
-      } else if (!window.html2canvas) {
-          alert("图片导出模块尚未加载完成，请稍后再试。");
-      }
+      if (!el) return;
+      html2canvas(el, { scale: 2, useCORS: true }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `WordCard-${data.topicEn}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+      });
   };
 
   // Quiz Logic
