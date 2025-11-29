@@ -17,12 +17,15 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci
+          cache: 'npm'
+      - run: npm install --no-audit --no-fund
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
