@@ -1,0 +1,6 @@
+name = "word-card-proxy"
+main = "worker.js"
+compatibility_date = "2025-11-30"
+
+[vars]
+ALLOW_ORIGINS = "http://localhost:5173,https://houzepeng.github.io"
