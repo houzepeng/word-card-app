@@ -323,12 +323,10 @@ export default function App() {
     setBatchImages({});
     
     try {
-      const prompt = `Create vocabulary list for children.
-Topic: "${topic}".
-Return ONLY JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName":"", "items":[{"en":"", "cn":"", "pinyin":"", "emoji":""}]}]}. Rules: 2-3 categories, 4 items each.`;
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
+      const systemPrompt = `Create vocabulary list for children. Topic: "${topic}". Return JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName":"", "items":[{"en":"", "cn":"", "pinyin":"", "emoji":""}]}]}. Rules: 2-3 categories, 4 items each.`;
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1betabeta/models/gemini-1.5-fnerateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Topic: ${topic}` }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json" } })
       });
       const parsedData = JSON.parse(res.candidates[0].content.parts[0].text);
       parsedData.categories = parsedData.categories.map((cat, i) => ({ ...cat, ...colorPalette[i % colorPalette.length] }));
@@ -348,21 +346,20 @@ Return ONLY JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName
 
   const generateSpeech = async (text) => {
     try {
-      const synth = window.speechSynthesis;
-      if (!synth) return;
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'en-US';
-      synth.speak(utter);
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1betbetaa/models/gemini-1.5-flasateContent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } } } })
+      });
+      const audioData = res.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (audioData) playAudio(audioData);
     } catch (e) {}
   };
 
   const generateSentence = async (word, cnWord) => {
     try {
-      const prompt = `Give one simple short sentence for child using the word "${word}".
-Return ONLY JSON: {"en":"", "cn":""}.`;
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/mbetaodels/gemini-1.5-flash:gContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Simple sentence for child: ${word}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
       });
       return JSON.parse(res.candidates[0].content.parts[0].text);
     } catch(e) { return {en:"Error", cn:"出错"}; }
@@ -371,11 +368,9 @@ Return ONLY JSON: {"en":"", "cn":""}.`;
   const generateStory = async () => {
     const words = data.categories.flatMap(c => c.items.map(i=>i.en)).join(",");
     try {
-      const prompt = `Write a very short story for children that uses these words: ${words}.
-Return ONLY JSON: {"en":"", "cn":""}.`;
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/modebetals/gemini-2.5-f2ash-previprevi0w-09-20252025:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Short story using: ${words}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
       });
       setCurrentStory(JSON.parse(res.candidates[0].content.parts[0].text));
     } catch(e) {}
