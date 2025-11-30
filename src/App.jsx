@@ -294,7 +294,6 @@ export default function App() {
   const [quizScore, setQuizScore] = useState(0);
 
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
-  const proxyUrl = import.meta.env.VITE_PROXY_URL || "";
   
   const colorPalette = [
     { bg: "bg-red-50", border: "border-red-200" },
@@ -307,10 +306,8 @@ export default function App() {
 
   // API Helper
   const safeFetch = async (url, options) => {
-    if (!proxyUrl && !apiKey) throw new Error("Missing API key");
-    const response = proxyUrl
-      ? await fetch(proxyUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, options }) })
-      : await fetch(`${url}?key=${apiKey}`, options);
+    if (!apiKey) throw new Error("Missing API key");
+    const response = await fetch(`${url}?key=${apiKey}`, options);
     const text = await response.text();
     if (!response.ok) throw new Error(text || `API Error: ${response.status}`);
     try { return JSON.parse(text); } catch { return { raw: text }; }
@@ -324,7 +321,7 @@ export default function App() {
     
     try {
       const systemPrompt = `Create vocabulary list for children. Topic: "${topic}". Return JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName":"", "items":[{"en":"", "cn":"", "pinyin":"", "emoji":""}]}]}. Rules: 2-3 categories, 4 items each.`;
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1betabeta/models/gemini-1.5-fnerateContent', {
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: `Topic: ${topic}` }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json" } })
       });
@@ -346,7 +343,7 @@ export default function App() {
 
   const generateSpeech = async (text) => {
     try {
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1betbetaa/models/gemini-1.5-flasateContent', {
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } } } })
       });
@@ -357,7 +354,7 @@ export default function App() {
 
   const generateSentence = async (word, cnWord) => {
     try {
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/mbetaodels/gemini-1.5-flash:gContent', {
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: `Simple sentence for child: ${word}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
       });
@@ -368,7 +365,7 @@ export default function App() {
   const generateStory = async () => {
     const words = data.categories.flatMap(c => c.items.map(i=>i.en)).join(",");
     try {
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/modebetals/gemini-2.5-f2ash-previprevi0w-09-20252025:generateContent', {
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: `Short story using: ${words}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
       });
