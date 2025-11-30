@@ -326,7 +326,7 @@ export default function App() {
       const systemPrompt = `Create vocabulary list for children. Topic: "${topic}". Return JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName":"", "items":[{"en":"", "cn":"", "pinyin":"", "emoji":""}]}]}. Rules: 2-3 categories, 4 items each.`;
       const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Topic: ${topic}` }] }], system_instruction: { parts: [{ text: systemPrompt }] }, generation_config: { response_mime_type: "application/json" } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Topic: ${topic}` }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json" } })
       });
       const parsedData = JSON.parse(res.candidates[0].content.parts[0].text);
       parsedData.categories = parsedData.categories.map((cat, i) => ({ ...cat, ...colorPalette[i % colorPalette.length] }));
@@ -348,7 +348,7 @@ export default function App() {
     try {
       const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text }] }], generation_config: { response_modalities: ["AUDIO"], speech_config: { voice_config: { prebuilt_voice_config: { voice_name: "Kore" } } } } })
+        body: JSON.stringify({ contents: [{ parts: [{ text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } } } })
       });
       const audioData = res.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (audioData) playAudio(audioData);
@@ -359,7 +359,7 @@ export default function App() {
     try {
       const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Simple sentence for child: ${word}` }] }], generation_config: { response_mime_type: "application/json", response_schema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Simple sentence for child: ${word}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
       });
       return JSON.parse(res.candidates[0].content.parts[0].text);
     } catch(e) { return {en:"Error", cn:"出错"}; }
@@ -370,7 +370,7 @@ export default function App() {
     try {
       const res = await safeFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Short story using: ${words}` }] }], generation_config: { response_mime_type: "application/json", response_schema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Short story using: ${words}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
       });
       setCurrentStory(JSON.parse(res.candidates[0].content.parts[0].text));
     } catch(e) {}
