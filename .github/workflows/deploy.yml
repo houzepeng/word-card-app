@@ -28,7 +28,11 @@ jobs:
       - name: Create env file
         run: |
           echo "VITE_GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" > .env.production
-          echo "VITE_PROXY_URL=${{ vars.PROXY_URL }}" >> .env.production
+          if [ -n "${{ vars.PROXY_URL }}" ]; then
+            echo "VITE_PROXY_URL=${{ vars.PROXY_URL }}" >> .env.production
+          else
+            echo "VITE_PROXY_URL=https://word-card-app.houzepeng1221.workers.dev/" >> .env.production
+          fi
       - run: npm install --no-audit --no-fund
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
