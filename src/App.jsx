@@ -297,11 +297,11 @@ export default function App() {
   const proxyUrl = import.meta.env.VITE_PROXY_URL || "";
   
   const colorPalette = [
-    { bg: "bg-red-50", border: "border-red-200" },
-    { bg: "bg-orange-50", border: "border-orange-200" },
-    { bg: "bg-yellow-50", border: "border-yellow-200" },
-    { bg: "bg-green-50", border: "border-green-200" },
-    { bg: "bg-blue-50", border: "border-blue-200" },
+    { color: "bg-red-50", borderColor: "border-red-200" },
+    { color: "bg-orange-50", borderColor: "border-orange-200" },
+    { color: "bg-yellow-50", borderColor: "border-yellow-200" },
+    { color: "bg-green-50", borderColor: "border-green-200" },
+    { color: "bg-blue-50", borderColor: "border-blue-200" },
   ];
 
 
@@ -328,8 +328,19 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
-      const parsedData = JSON.parse(res.candidates[0].content.parts[0].text);
-      parsedData.categories = parsedData.categories.map((cat, i) => ({ ...cat, ...colorPalette[i % colorPalette.length] }));
+      const text = (res?.candidates?.[0]?.content?.parts || []).map(p => p?.text).find(Boolean) || "";
+      let parsedData;
+      try {
+        parsedData = JSON.parse(text.trim().replace(/^```json\s*|```$/g, ''));
+      } catch {
+        const s = text.indexOf('{');
+        const e = text.lastIndexOf('}');
+        parsedData = s !== -1 && e !== -1 ? JSON.parse(text.slice(s, e + 1)) : { topicEn: topic, topicCn: '', categories: [] };
+      }
+      const cats = Array.isArray(parsedData.categories) ? parsedData.categories : [];
+      parsedData.categories = cats.map((cat, i) => ({ ...cat, ...colorPalette[i % colorPalette.length] }));
+      if (!parsedData.topicEn) parsedData.topicEn = topic;
+      if (!parsedData.topicCn) parsedData.topicCn = '主题';
       setData(parsedData);
     } catch (e) { alert(e.message?.includes('leaked') ? 'API Key 已泄露或被禁用，请更换新的密钥' : (e.message === 'Missing API key' ? '缺少 API Key，请在环境变量中配置后再试' : '生成失败，请重试')); } finally { setLoading(false); }
   };
@@ -362,7 +373,14 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
-      return JSON.parse(res.candidates[0].content.parts[0].text);
+      const text = (res?.candidates?.[0]?.content?.parts || []).map(p => p?.text).find(Boolean) || "";
+      try {
+        return JSON.parse(text.trim().replace(/^```json\s*|```$/g, ''));
+      } catch {
+        const s = text.indexOf('{');
+        const e = text.lastIndexOf('}');
+        return s !== -1 && e !== -1 ? JSON.parse(text.slice(s, e + 1)) : { en: word, cn: cnWord || '' };
+      }
     } catch(e) { return {en:"Error", cn:"出错"}; }
   };
 
@@ -374,7 +392,16 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
-      setCurrentStory(JSON.parse(res.candidates[0].content.parts[0].text));
+      const text = (res?.candidates?.[0]?.content?.parts || []).map(p => p?.text).find(Boolean) || "";
+      let story;
+      try {
+        story = JSON.parse(text.trim().replace(/^```json\s*|```$/g, ''));
+      } catch {
+        const s = text.indexOf('{');
+        const e = text.lastIndexOf('}');
+        story = s !== -1 && e !== -1 ? JSON.parse(text.slice(s, e + 1)) : { en: 'No story', cn: '暂无内容' };
+      }
+      setCurrentStory(story);
     } catch(e) {}
   };
 
