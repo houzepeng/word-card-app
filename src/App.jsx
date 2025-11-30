@@ -294,6 +294,7 @@ export default function App() {
   const [quizScore, setQuizScore] = useState(0);
 
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
+  const proxyUrl = import.meta.env.VITE_PROXY_URL || "";
   
   const colorPalette = [
     { bg: "bg-red-50", border: "border-red-200" },
@@ -306,8 +307,10 @@ export default function App() {
 
   // API Helper
   const safeFetch = async (url, options) => {
-    if (!apiKey) throw new Error("Missing API key");
-    const response = await fetch(`${url}?key=${apiKey}`, options);
+    if (!proxyUrl && !apiKey) throw new Error("Missing API key");
+    const response = proxyUrl
+      ? await fetch(proxyUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, options }) })
+      : await fetch(url, { ...options, headers: { ...(options?.headers || {}), 'X-goog-api-key': apiKey } });
     const text = await response.text();
     if (!response.ok) throw new Error(text || `API Error: ${response.status}`);
     try { return JSON.parse(text); } catch { return { raw: text }; }
@@ -320,10 +323,10 @@ export default function App() {
     setBatchImages({});
     
     try {
-      const systemPrompt = `Create vocabulary list for children. Topic: "${topic}". Return JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName":"", "items":[{"en":"", "cn":"", "pinyin":"", "emoji":""}]}]}. Rules: 2-3 categories, 4 items each.`;
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent', {
+      const prompt = `Create vocabulary list for children.\nTopic: "${topic}".\nReturn ONLY JSON: {"topicEn":"", "topicCn":"", "categories":[{"name":"", "cnName":"", "items":[{"en":"", "cn":"", "pinyin":"", "emoji":"", "color":"", "borderColor":""}]}]}. Rules: 2-3 categories, 4 items each.`;
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Topic: ${topic}` }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json" } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
       const parsedData = JSON.parse(res.candidates[0].content.parts[0].text);
       parsedData.categories = parsedData.categories.map((cat, i) => ({ ...cat, ...colorPalette[i % colorPalette.length] }));
@@ -354,9 +357,10 @@ export default function App() {
 
   const generateSentence = async (word, cnWord) => {
     try {
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent', {
+      const prompt = `Give a simple bilingual sentence for children using the word "${word}" (${cnWord}). Return ONLY JSON {en:"", cn:""}.`;
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Simple sentence for child: ${word}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
       return JSON.parse(res.candidates[0].content.parts[0].text);
     } catch(e) { return {en:"Error", cn:"出错"}; }
@@ -365,9 +369,10 @@ export default function App() {
   const generateStory = async () => {
     const words = data.categories.flatMap(c => c.items.map(i=>i.en)).join(",");
     try {
-      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent', {
+      const prompt = `Write a very short and fun bilingual story for kids using these words: ${words}. Return ONLY JSON {en:"", cn:""}.`;
+      const res = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Short story using: ${words}` }] }], generationConfig: { responseMimeType: "application/json", responseSchema: {type: "OBJECT", properties: {en: {type: "STRING"}, cn: {type: "STRING"}}} } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
       setCurrentStory(JSON.parse(res.candidates[0].content.parts[0].text));
     } catch(e) {}
